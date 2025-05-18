@@ -32,7 +32,24 @@ jobs:
         run: |
           wget -O origin.js https://raw.githubusercontent.com/cmliu/edgetunnel/refs/heads/main/明文源码.js
 
+      - name: 检查文件是否有变动
+        id: check_diff
+        run: |
+          if [ -f origin.js.old ]; then
+            if cmp -s origin.js origin.js.old; then
+              echo "No changes in origin.js."
+              echo "changed=false" >> $GITHUB_OUTPUT
+            else
+              echo "Changes detected in origin.js."
+              echo "changed=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No origin.js.old found. Assuming changes present."
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: 混淆 Edgetunnel worker.js
+        if: steps.check_diff.outputs.changed == 'true'
         run: |
           javascript-obfuscator origin.js --output _worker.js \
             --compact true \
@@ -46,10 +63,17 @@ jobs:
             --transform-object-keys true \
             --unicode-escape-sequence true
 
+      - name: 保存原始文件用于下一次比较
+        if: steps.check_diff.outputs.changed == 'true'
+        run: |
+          cp origin.js origin.js.old
+
       - name: 提交更改
+        if: steps.check_diff.outputs.changed == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: main
           commit_message: ':arrow_up: 更新最新的 Edgetunnel 面板'
           commit_author: 'github-actions[bot] <github-actions[bot]@users.noreply.github.com>'
           push_options: '--set-upstream'
+          file_pattern: '_worker.js origin.js.old'
