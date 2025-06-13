@@ -30,8 +30,8 @@ jobs:
 
       - name: 下载 Edgetunnel worker.js
         run: |
-          wget -O origin.js https://raw.githubusercontent.com/cmliu/edgetunnel/refs/heads/main/明文源码.js
-
+          wget -O origin.js https://raw.githubusercontent.com/cmliu/edgetunnel/refs/heads/main/_worker.js
+          
       - name: 检查文件是否有变动
         id: check_diff
         run: |
